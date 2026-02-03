@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#121212">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>GP5 Studio PRO</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path d='M256 480 C 64 256 32 128 32 64 A 224 224 0 0 1 480 64 C 480 128 448 256 256 480 Z' fill='%2300f2ff' stroke='%23003366' stroke-width='10'/><text x='256' y='220' font-family='sans-serif' font-weight='900' font-size='200' text-anchor='middle' fill='%2309090b'>GP</text></svg>">
+    
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' style='background-color: %23121212;'><rect width='512' height='512' fill='%23121212'/><path d='M256 480 C 64 256 32 128 32 64 A 224 224 0 0 1 480 64 C 480 128 448 256 256 480 Z' fill='%2300f2ff'/><text x='256' y='220' font-family='sans-serif' font-weight='900' font-size='200' text-anchor='middle' fill='%2309090b'>GP</text></svg>">
+
+    <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/alphaTab.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #09090b;
+            --panel-bg: #141419;
+            --neon-blue: #00f2ff;
+            --neon-green: #00ff99;
+            --neon-red: #ff3333;
+            --neon-orange: #ffbd00;
+            --text-ui: #eee;
+        }
+
+        /* BLOCCO INVERSIONI COLORI ANDROID */
+        html, body, div, canvas { forced-color-adjust: none !important; }
+
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            background: var(--bg-dark); 
+            color: var(--text-ui); 
+            margin: 0; padding: 0; 
+            height: 100vh; display: flex; flex-direction: column; 
+            overflow: hidden; user-select: none;
+        }
+        
+        #countOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999; display: none;
+            justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        }
+        #countDownNum {
+            font-family: 'Orbitron', sans-serif; font-size: 180px; font-weight: 900;
+            color: transparent; 
+            -webkit-text-stroke: 4px var(--neon-blue);
+            text-shadow: 0 0 100px var(--neon-blue);
+            animation: pulse 0.2s infinite alternate;
+        }
+        @keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.05); opacity: 1; } }
+
+        .header { 
+            flex: 0 0 auto; background: rgba(20, 20, 25, 1); 
+            padding: 10px 12px; border-bottom: 2px solid #333; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.8); z-index: 100;
+        }
+
+        /* CONTAINER SCROLL */
+        #scrollContainer {
+            flex: 1 1 auto; overflow-y: auto; position: relative;
+            background-color: #121212; 
+            padding-bottom: 80px;
+        }
+
+        #scrollContainer::-webkit-scrollbar { width: 12px; }
+        #scrollContainer::-webkit-scrollbar-track { background: #111; }
+        #scrollContainer::-webkit-scrollbar-thumb { background: #444; border-radius: 6px; border: 2px solid #111; }
+
+        .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        
+        .btn { 
+            background: #222; border: 1px solid #444; color: var(--text-ui); 
+            height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px;
+            border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; flex: 1;
+            text-transform: uppercase; transition: 0.1s; min-width: 0;
+        }
+        .btn:active { background: #444; transform: scale(0.96); }
+        .btn i { font-size: 16px; }
+
+        .btn-file { background: #2a2a35; border-color: #666; width: 100%; justify-content: center; }
+        
+        .btn-play { 
+            background: linear-gradient(135deg, #00b09b, #96c93d); 
+            color: #000; border: none; font-size: 18px; flex: 2; 
+            box-shadow: 0 0 20px rgba(0, 255, 153, 0.3); height: 60px; 
+        }
+        .btn-stop { 
+            background: linear-gradient(135deg, #500, #300); 
+            border: 1px solid var(--neon-red); color: white; flex: 0.7; height: 60px; font-size: 14px;
+        }
+
+        .btn-zoom { font-size: 24px; font-family: monospace; max-width: 50px; background: #1e1e24; color: white; border: 1px solid #555; }
+        
+        .active-blue { background: #003366; border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.4); }
+        .btn-mute.active { background: #500; border-color: var(--neon-red); color: var(--neon-red); box-shadow: inset 0 0 10px rgba(255, 50, 50, 0.5); }
+        .btn-solo.active { background: #550; border-color: var(--neon-orange); color: var(--neon-orange); box-shadow: inset 0 0 10px rgba(255, 189, 0, 0.5); }
+        
+        select { 
+            background: #111; color: #fff; padding: 0 15px; 
+            border-radius: 8px; border: 1px solid #444; 
+            font-size: 14px; width: 100%; height: 48px; outline: none; appearance: none; flex: 1; 
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cccccc%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;
+        }
+
+        .trainer-bar { background: #1a1a20; border: 1px solid #333; border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .monitor { font-family: 'Orbitron', sans-serif; color: var(--neon-blue); font-size: 22px; font-weight: bold; width: 70px; text-align: center; text-shadow: 0 0 10px rgba(0, 242, 255, 0.4); }
+        .inputs-area { display: flex; align-items: center; gap: 6px; }
+        .input-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .input-label { font-size: 9px; color: #777; margin-bottom: 2px; font-weight: bold; }
+        .num-input { background: #000; border: 1px solid #444; color: white; width: 45px; height: 36px; text-align: center; border-radius: 6px; font-family: 'Roboto'; font-size: 16px; font-weight: bold; outline: none; }
+        .num-input:focus { border-color: var(--neon-green); color: var(--neon-green); }
+
+        .switch-wrapper { display: flex; flex-direction: column; align-items: center; margin-right: 2px; }
+        .switch-label { font-size: 9px; color: #ffbd00; margin-bottom: 2px; font-weight: bold; }
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 30px; border: 1px solid #555; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: #aaa; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: rgba(255, 189, 0, 0.2); border-color: #ffbd00; }
+        input:checked + .slider:before { transform: translateX(20px); background: #ffbd00; }
+
+        #alphaTab { min-height: 800px; margin-top: 10px; border-radius: 8px; border: 1px solid #333; }
+        .at-cursor-bar { background: rgba(0, 242, 255, 0.2) !important; border: 2px solid var(--neon-blue) !important; }
+        .at-cursor-beat { background: #007bff !important; width: 4px; }
+    </style>
+</head>
+<body>
+
+<div id="countOverlay"><div id="countDownNum"></div></div>
+
+<div class="header">
+    
+    <div class="row">
+        <input type="file" id="fileInput" accept=".gp3,.gp4,.gp5,.gpx,.gp" style="display:none">
+        <button class="btn btn-file" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-folder-open"></i> CARICA FILE .GP5
+        </button>
+    </div>
+
+    <div class="row">
+        <select id="trackList" onchange="changeTrack(this.value)">
+            <option>-- Carica file --</option>
+        </select>
+    </div>
+
+    <div class="row">
+        <button class="btn btn-mute" id="btnMute" onclick="toggleMute()" title="Zittisci">MUTE</button>
+        <button class="btn btn-solo" id="btnSolo" onclick="toggleSolo()" title="Solo">SOLO</button>
+        <button class="btn btn-zoom" onclick="changeZoom(-10)" title="Zoom Out"> − </button>
+        <button class="btn btn-zoom" onclick="changeZoom(10)" title="Zoom In"> + </button>
+    </div>
+
+    <div class="row trainer-bar">
+        <div class="switch-wrapper">
+            <span class="switch-label">TRAINER</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="trainerToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div id="bigSpeedDisplay" class="monitor">100%</div>
+        <div class="inputs-area">
+            <div class="input-wrapper"><span class="input-label">DA</span><input type="number" id="startSpeed" value="50" class="num-input" onchange="saveSettings(); forceUpdateSpeed()"></div>
+            <div class="input-wrapper"><span class="input-label">A</span><input type="number" id="endSpeed" value="100" class="num-input" onchange="saveSettings()"></div>
+            <div class="input-wrapper"><span class="input-label">STEP</span><input type="number" id="stepSpeed" value="5" class="num-input" onchange="saveSettings()"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <button class="btn" onclick="toggleMetronome()" id="btnMetro"><i class="fas fa-tachometer-alt"></i> METRO</button>
+        <button class="btn active-blue" onclick="toggleCountIn()" id="btnCount"><i class="fas fa-hourglass-start"></i> COUNT</button>
+        <button class="btn active-blue" onclick="toggleLoop()" id="btnLoop"><i class="fas fa-sync-alt"></i> LOOP</button>
+    </div>
+    
+    <div class="row">
+        <button class="btn btn-play" id="playPauseBtn" onclick="handlePlayButton()"><i class="fas fa-play"></i> START / PAUSE</button>
+        <button class="btn btn-stop" onclick="stop()"><i class="fas fa-stop"></i> STOP</button>
+    </div>
+</div>
+
+<div id="scrollContainer">
+    <div id="alphaTab"></div>
+</div>
+
+<script>
+    const wrapper = document.querySelector('#alphaTab');
+    const scrollContainer = document.querySelector('#scrollContainer');
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+
+    let myLoopEnabled = true;
+    let countInEnabled = true; 
+    let metroEnabled = false;
+    let isCountingIn = false;
+    let currentZoom = 100;
+
+    const api = new alphaTab.AlphaTabApi(wrapper, {
+        core: { engine: 'html5', useWorkers: true },
+        display: { 
+            layoutMode: 'page', 
+            staves: 'tab', 
+            scale: 1.0,
+            // COLORI NATIVI SCURI
+            resources: {
+                mainGlyphColor: "#ffffff",
+                secondaryGlyphColor: "#cccccc",
+                staffLineColor: "#888888",
+                barSeparatorColor: "#aaaaaa",
+                scoreInfoColor: "#ffffff"
+            }
+        },
+        player: {
+            enablePlayer: true,
+            soundFont: 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/soundfont/sonivox.sf2',
+            scrollElement: scrollContainer, 
+            scrollMode: 'continuous',
+            enableCursor: true
+        }
+    });
+
+    function saveSettings() {
+        const settings = {
+            start: document.getElementById('startSpeed').value,
+            end: document.getElementById('endSpeed').value,
+            step: document.getElementById('stepSpeed').value,
+            zoom: currentZoom,
+            trainer: document.getElementById('trainerToggle').checked,
+            metro: metroEnabled,
+            count: countInEnabled,
+            loop: myLoopEnabled
+        };
+        localStorage.setItem('gp5_settings_v28', JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+        const data = localStorage.getItem('gp5_settings_v28');
+        if (data) {
+            const s = JSON.parse(data);
+            if(s.start) document.getElementById('startSpeed').value = s.start;
+            if(s.end) document.getElementById('endSpeed').value = s.end;
+            if(s.step) document.getElementById('stepSpeed').value = s.step;
+            if(s.zoom) { currentZoom = s.zoom; applyZoom(); }
+            document.getElementById('trainerToggle').checked = s.trainer;
+            if (s.metro !== undefined && s.metro !== metroEnabled) toggleMetronome();
+            if (s.count !== undefined && s.count !== countInEnabled) toggleCountIn(); 
+            if (s.loop !== undefined && s.loop !== myLoopEnabled) toggleLoop();
+        }
+    }
+
+    function changeZoom(delta) {
+        currentZoom += delta;
+        if(currentZoom < 50) currentZoom = 50;
+        if(currentZoom > 250) currentZoom = 250;
+        applyZoom();
+        saveSettings();
+    }
+
+    function applyZoom() {
+        api.settings.display.scale = currentZoom / 100;
+        api.updateSettings();
+        api.render();
+    }
+
+    function toggleMute() {
+        const btn = document.getElementById('btnMute');
+        const trackIndex = document.getElementById('trackList').value;
+        if(!api.score || !api.score.tracks[trackIndex]) return;
+        const isMuted = btn.classList.contains('active');
+        if (isMuted) {
+            api.changeTrackMute([api.score.tracks[trackIndex]], false);
+            btn.classList.remove('active');
+        } else {
+            api.changeTrackMute([api.score.tracks[trackIndex]], true);
+            btn.classList.add('active');
+            document.getElementById('btnSolo').classList.remove('active');
+            api.changeTrackSolo([api.score.tracks[trackIndex]], false);
+        }
+    }
+
+    function toggleSolo() {
+        const btn = document.getElementById('btnSolo');
+        const trackIndex = document.getElementById('trackList').value;
+        if(!api.score || !api.score.tracks[trackIndex]) return;
+        const isSolo = btn.classList.contains('active');
+        if (isSolo) {
+            api.changeTrackSolo([api.score.tracks[trackIndex]], false);
+            btn.classList.remove('active');
+        } else {
+            api.changeTrackSolo([api.score.tracks[trackIndex]], true);
+            btn.classList.add('active');
+            document.getElementById('btnMute').classList.remove('active');
+            api.changeTrackMute([api.score.tracks[trackIndex]], false);
+        }
+    }
+
+    function playBeep() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'square'; osc.frequency.value = 1200; 
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+    }
+
+    document.getElementById('fileInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => { api.load(evt.target.result); };
+            reader.readAsArrayBuffer(file);
+        }
+    };
+
+    api.scoreLoaded.on((score) => {
+        const trackSelect = document.getElementById('trackList');
+        trackSelect.innerHTML = "";
+        score.tracks.forEach((track, index) => {
+            const option = document.createElement("option");
+            option.value = index;
+            option.text = track.title || `Traccia ${index + 1}`;
+            trackSelect.appendChild(option);
+        });
+        document.getElementById('btnMute').classList.remove('active');
+        document.getElementById('btnSolo').classList.remove('active');
+        api.playbackSpeed = 1.0;
+        loadSettings();
+        forceUpdateSpeed(); 
+        updateSpeedUI();
+    });
+
+    function changeTrack(index) {
+        api.renderTracks([api.score.tracks[index]]);
+        document.getElementById('btnMute').classList.remove('active');
+        document.getElementById('btnSolo').classList.remove('active');
+    }
+
+    function handlePlayButton() {
+        if (api.playerState === 1) {
+            api.pause();
+            return;
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (countInEnabled && !isCountingIn) {
+            calculateAndStartCountIn();
+        } else {
+            api.play();
+        }
+    }
+
+    function calculateAndStartCountIn() {
+        isCountingIn = true;
+        const overlay = document.getElementById('countOverlay');
+        const countNum = document.getElementById('countDownNum');
+        overlay.style.display = 'flex';
+        let baseBpm = 120;
+        if (api.score && api.score.tempo) baseBpm = api.score.tempo;
+        else if (api.score && api.score.masterBars && api.score.masterBars.length > 0) baseBpm = api.score.masterBars[0].tempo;
+        let beats = 4;
+        if (api.score && api.score.masterBars && api.score.masterBars.length > 0) beats = api.score.masterBars[0].timeSignatureNumerator;
+        const realBpm = baseBpm * api.playbackSpeed;
+        const msPerBeat = 60000 / realBpm;
+        let count = beats;
+        countNum.innerText = count;
+        playBeep();
+        api.countInVolume = 0; 
+        const timer = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countNum.innerText = count;
+                playBeep();
+            } else {
+                clearInterval(timer);
+                overlay.style.display = 'none';
+                isCountingIn = false;
+                api.play(); 
+            }
+        }, msPerBeat);
+    }
+
+    function stop() {
+        api.stop();
+        isCountingIn = false;
+        document.getElementById('countOverlay').style.display = 'none';
+    }
+
+    api.playerStateChanged.on((e) => {
+        const btn = document.getElementById('playPauseBtn');
+        if (e.state === 1) { 
+            btn.innerHTML = '<i class="fas fa-pause"></i> PAUSA';
+            btn.style.background = "#ffbb00"; btn.style.color = "#000";
+        } else {
+            btn.innerHTML = '<i class="fas fa-play"></i> START / PAUSE';
+            btn.style.background = "linear-gradient(135deg, #00b09b, #96c93d)"; btn.style.color = "#000";
+        }
+    });
+
+    api.isLooping = false; 
+
+    api.playerFinished.on(() => {
+        if (myLoopEnabled) {
+            handleSpeedTrainer();
+            setTimeout(() => {
+                if(countInEnabled) calculateAndStartCountIn();
+                else api.play();
+            }, 100);
+        }
+    });
+
+    function handleSpeedTrainer() {
+        const isTrainerOn = document.getElementById('trainerToggle').checked;
+        if (isTrainerOn) {
+            const endPct = parseInt(document.getElementById('endSpeed').value) / 100;
+            const stepPct = parseInt(document.getElementById('stepSpeed').value) / 100;
+            if (api.playbackSpeed < endPct) {
+                let newSpeed = api.playbackSpeed + stepPct;
+                newSpeed = Math.round(newSpeed * 100) / 100;
+                if (newSpeed > endPct) newSpeed = endPct;
+                api.playbackSpeed = newSpeed;
+                updateSpeedUI();
+            }
+        }
+    }
+
+    function forceUpdateSpeed() {
+        const isTrainerOn = document.getElementById('trainerToggle').checked;
+        if (isTrainerOn) {
+            const startVal = document.getElementById('startSpeed').value;
+            if(startVal && startVal > 0) {
+                api.playbackSpeed = parseInt(startVal) / 100;
+                updateSpeedUI();
+            }
+        }
+    }
+
+    function toggleLoop() {
+        myLoopEnabled = !myLoopEnabled;
+        const btn = document.getElementById('btnLoop');
+        if (myLoopEnabled) btn.classList.add('active-blue'); else btn.classList.remove('active-blue');
+        saveSettings();
+    }
+
+    function toggleCountIn() {
+        countInEnabled = !countInEnabled;
+        const btn = document.getElementById('btnCount');
+        if (countInEnabled) btn.classList.add('active-blue'); else btn.classList.remove('active-blue');
+        saveSettings();
+    }
+
+    function toggleMetronome() {
+        metroEnabled = !metroEnabled;
+        const btn = document.getElementById('btnMetro');
+        api.metronomeVolume = metroEnabled ? 1 : 0;
+        if (metroEnabled) btn.classList.add('active-blue'); else btn.classList.remove('active-blue');
+        saveSettings();
+    }
+
+    function updateSpeedUI() {
+        const pct = Math.round(api.playbackSpeed * 100);
+        document.getElementById('bigSpeedDisplay').innerText = pct + "%";
+    }
+
+    document.getElementById('trainerToggle').onchange = (e) => {
+        if (e.target.checked) forceUpdateSpeed();
+        saveSettings();
+    };
+    
+    window.addEventListener('load', () => { loadSettings(); });
+
+</script>
+</body>
+</html>
