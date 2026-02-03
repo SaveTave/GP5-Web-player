@@ -1,5 +1,7 @@
 🎸 GP5 Studio Web Player (DeX Optimized)
 
+Link web player: https://savetave.github.io/GP5-Web-player/
+
 Un player di tablature Guitar Pro (GP3, GP4, GP5, GPX) basato sul web, ottimizzato per l'uso su dispositivi mobili e ambienti desktop come Samsung DeX. Sviluppato per offrire un'esperienza di studio musicale superiore, senza pubblicità e con funzionalità di looping avanzate.
 
 🚀 Caratteristiche Principali
